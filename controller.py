@@ -43,3 +43,4 @@ def acquire_lock() -> None:
     """Acquire lock"""
 
     s3_client = boto3.client("s3")
+    acquire_s3_lock(s3_client, path)
