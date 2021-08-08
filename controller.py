@@ -46,6 +46,16 @@ class S3LockClient():
         self.bucket = bucket
         self.verbose = verbose
 
+    def init(self):
+        are_you_sure = input("Are you sure you want to init? This will erase all values. (yes please) ")
+        if are_you_sure == "yes please":
+            self._write_s3_object(self.FLAG_0_FILE, self.FLAG_UNSET_VALUE)
+            self._write_s3_object(self.FLAG_1_FILE, self.FLAG_UNSET_VALUE)
+            self._write_s3_object(self.TURN_FILE, self.FLAG_UNSET_VALUE)
+            print("Initialized.")
+        else:
+            print("Not initialized.")
+
     def wait_for_lock(self: str):
         if self.verbose:
             print(f"I am the mighty process {self.process_num}!")
@@ -126,6 +136,20 @@ def acquire_lock(bucket: str, process_num: str, verbose: bool = False) -> None:
         wait_time_s=5,
         verbose=verbose,
     ).wait_for_lock()
+
+
+@cli.command()
+@click.option("--bucket", "-b", required=True, type=str, help="Bucket")
+def init(bucket: str) -> None:
+    """Initialize lock"""
+
+    s3_client = boto3.client("s3")
+    S3LockClient(
+        s3_client=s3_client,
+        process_num="0",
+        bucket=bucket,
+    ).init()
+
 
 if __name__ == '__main__':
     cli()
