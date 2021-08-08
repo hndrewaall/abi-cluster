@@ -1,0 +1,26 @@
+version: "3.5"
+services:
+  geth:
+    image: docker.gbre.org/geth
+    build: ./geth
+    user: 1000:1000
+    ports:
+      - 30303
+      - 8544:8545
+    volumes:
+      - /mnt/Scorpion/abi-cluster/test/geth-data:/home/ethereum/.ethereum
+      - /mnt/Raiden/abi-cluster/test/geth-keystore:/home/ethereum/.keystore
+    command: --goerli --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
+    restart: unless-stopped
+
+  beacon:
+    image: docker.gbre.org/lighthouse
+    build: ./lighthouse
+    user: 1000:1000
+    ports:
+      - 9000:9000
+      - 9000:9000/udp
+    volumes:
+      - /mnt/Scorpion/abi-cluster/test/lighthouse:/home/lighthouse/.lighthouse
+    command: beacon_node --network prater --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545
+    restart: unless-stopped
