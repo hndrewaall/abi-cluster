@@ -53,9 +53,11 @@ class S3LockClient():
 
         self._write_s3_object(self._my_flag_file, self.FLAG_SET_VALUE)
         self._write_s3_object(self.TURN_FILE, self._their_turn_value)
-        
+
         started = datetime.datetime.now()
+        
         while (self._they_want_to_enter and self._its_their_turn):
+
             if self.verbose:
                 waited_for = (datetime.datetime.now() - started).seconds
                 print(f"Poor little old me, process {self.process_num}, waiting for my turn for {waited_for} seconds..")
