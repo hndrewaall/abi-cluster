@@ -11,7 +11,7 @@ class S3LockFilesDontExist(Exception):
     pass
 
 
-class S3LockClient():
+class S3Lock():
     """
     Based on: https://en.wikipedia.org/wiki/Peterson%27s_algorithm
     P0      flag[0] = true;
@@ -53,9 +53,9 @@ class S3LockClient():
         self.verbose = verbose
         self.namespace = namespace
         if namespace is not None:
-            self.FLAG_0_FILE = f"{namespace}_{self.FLAG_0_FILE}"
-            self.FLAG_1_FILE = f"{namespace}_{self.FLAG_1_FILE}"
-            self.TURN_FILE = f"{namespace}_{self.TURN_FILE}"
+            self.FLAG_0_FILE = f"{namespace}{self.FLAG_0_FILE}"
+            self.FLAG_1_FILE = f"{namespace}{self.FLAG_1_FILE}"
+            self.TURN_FILE = f"{namespace}{self.TURN_FILE}"
 
     @classmethod
     def init_a_lock(cls, s3_client, bucket, namespace: str = None, overwrite: bool = False, verbose: bool = False):
@@ -177,13 +177,13 @@ def cli():
 @cli.command()
 @click.option("--bucket", "-b", required=True, type=str, help="Bucket")
 @click.option("--process-num", "-p", required=True, type=click.Choice(["0", "1"]), help="Process number")
-@click.option("--namespace", "-n", required=True, type=str, help="String to prepend lock files with")
+@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
 @click.option("--verbose", "-v", default=False, is_flag=True)
 def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: bool = False) -> None:
     """Acquire lock"""
 
     s3_client = boto3.client("s3")
-    S3LockClient(
+    S3Lock(
         s3_client=s3_client,
         process_num=process_num,
         bucket=bucket,
@@ -196,9 +196,9 @@ def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: 
 @cli.command()
 @click.option("--bucket", "-b", required=True, type=str, help="Bucket")
 @click.option("--overwrite", "-v", default=False, is_flag=True, help="Initialize values, even if the lock files already exist")
-@click.option("--namespace", "-n", required=True, type=str, help="String to prepend lock files with")
+@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
 @click.option("--verbose", "-v", default=False, is_flag=True)
-def init(bucket: str, overwrite: bool, namespace: str = None, verbose: bool) -> None:
+def init(bucket: str, overwrite: bool = False, namespace: str = None, verbose: bool) -> None:
     """Initialize lock"""
 
     if overwrite:
@@ -208,7 +208,7 @@ def init(bucket: str, overwrite: bool, namespace: str = None, verbose: bool) -> 
             return
 
     s3_client = boto3.client("s3")
-    S3LockClient.init_a_lock(
+    S3Lock.init_a_lock(
         s3_client=s3_client,
         bucket=bucket,
         overwrite=overwrite,
