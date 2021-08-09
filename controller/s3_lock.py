@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 
-import boto3
-import click
 import datetime
-
 from botocore.errorfactory import ClientError
 
 
@@ -11,29 +8,13 @@ class S3LockFilesDontExist(Exception):
     pass
 
 
+class S3LockBadProcessName(Exception):
+    pass
+
+
 class S3Lock():
     """
     Based on: https://en.wikipedia.org/wiki/Peterson%27s_algorithm
-    P0      flag[0] = true;
-    P0_gate turn = 1;
-            while (flag[1] == true && turn == 1)
-            {
-                // busy wait
-            }
-            // critical section
-            ...
-            // end of critical section
-            flag[0] = false;
-    P1      flag[1] = true;
-    P1_gate turn = 0;
-            while (flag[0] == true && turn == 0)
-            {
-                // busy wait
-            }
-            // critical section
-            ...
-            // end of critical section
-            flag[1] = false;
     """
 
     FLAG_0_FILE = "flag_0"
@@ -45,8 +26,14 @@ class S3Lock():
 
     P0_TURN_VALUE = "0"
     P1_TURN_VALUE = "1"
+
+    PROCESS_0 = "0"
+    PROCESS_1 = "1"
     
     def __init__(self, s3_client, process_num: str, bucket: str, namespace: str = None, wait_time_s: int = 1, verbose: bool = False):
+        if process_num not in [self.PROCESS_0, self.PROCESS_1]:
+            raise S3LockBadProcessName(f"Process name must be str {self.PROCESS_0} or {self.PROCESS_1}")
+        
         self.s3_client = s3_client
         self.process_num = process_num
         self.bucket = bucket
@@ -65,25 +52,25 @@ class S3Lock():
             bucket=bucket,
             namespace=namespace,
             verbose=verbose,
-        ).init()
+        ).init(overwrite)
 
     def init(self, overwrite: bool = False):
-        files = [
+        lock_files = [
             self.FLAG_0_FILE,
             self.FLAG_1_FILE,
             self.TURN_FILE,
         ]
         
-        for lock_file in files:
+        for lock_file in lock_files:
             if overwrite or not self._s3_object_exists(self.FLAG_0_FILE):
                 self._write_s3_object(self.FLAG_0_FILE, self.FLAG_UNSET_VALUE)
-                if verbose:
+                if self.verbose:
                     print(f"Wrote file '{lock_file}'.")
             else:
-                if verbose:
+                if self.verbose:
                     print(f"Not writing file '{lock_file}' - overwrite false and file exists.")
 
-    def wait_for_lock(self: str):
+    def wait_for_lock(self):
         if not self._all_files_exist:
             if self.verbose:
                 print("Lock files need to be initialized")
@@ -129,15 +116,15 @@ class S3Lock():
 
     @property
     def _my_flag_file(self):
-        return self.FLAG_0_FILE if self.process_num == "0" else self.FLAG_1_FILE
+        return self.FLAG_0_FILE if self.process_num == self.PROCESS_0 else self.FLAG_1_FILE
 
     @property
     def _their_flag_file(self):
-        return self.FLAG_0_FILE if self.process_num == "1" else self.FLAG_1_FILE
+        return self.FLAG_0_FILE if self.process_num == self.PROCESS_1 else self.FLAG_1_FILE
 
     @property
     def _their_turn_value(self):
-        return self.P0_TURN_VALUE if self.process_num == "1" else self.P1_TURN_VALUE
+        return self.P0_TURN_VALUE if self.process_num == self.PROCESS_1 else self.P1_TURN_VALUE
 
     @property
     def _all_files_exist(self):
@@ -163,59 +150,7 @@ class S3Lock():
 
     def _s3_object_exists(self, filename) -> str:
         try:
-            s3.head_object(Bucket=self.bucket, Key=self.filename)
+            self.s3_client.head_object(Bucket=self.bucket, Key=filename)
         except ClientError:
             return False
         return True
-
-
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.option("--bucket", "-b", required=True, type=str, help="Bucket")
-@click.option("--process-num", "-p", required=True, type=click.Choice(["0", "1"]), help="Process number")
-@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
-@click.option("--verbose", "-v", default=False, is_flag=True)
-def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: bool = False) -> None:
-    """Acquire lock"""
-
-    s3_client = boto3.client("s3")
-    S3Lock(
-        s3_client=s3_client,
-        process_num=process_num,
-        bucket=bucket,
-        wait_time_s=5,
-        namespace=namespace,
-        verbose=verbose,
-    ).wait_for_lock()
-
-
-@cli.command()
-@click.option("--bucket", "-b", required=True, type=str, help="Bucket")
-@click.option("--overwrite", "-v", default=False, is_flag=True, help="Initialize values, even if the lock files already exist")
-@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
-@click.option("--verbose", "-v", default=False, is_flag=True)
-def init(bucket: str, overwrite: bool = False, namespace: str = None, verbose: bool) -> None:
-    """Initialize lock"""
-
-    if overwrite:
-        are_you_sure = input("Are you sure you want to overwrite? This will erase any values that exist. (yes please) ")
-        if not are_you_sure == "yes please":
-            print("Exiting without initializing.")
-            return
-
-    s3_client = boto3.client("s3")
-    S3Lock.init_a_lock(
-        s3_client=s3_client,
-        bucket=bucket,
-        overwrite=overwrite,
-        namespace=namespace,
-        verbose=verbose,
-    )
-
-
-if __name__ == '__main__':
-    cli()
