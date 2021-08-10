@@ -20,7 +20,19 @@ services:
     ports:
       - 9000:9000
       - 9000:9000/udp
+      - 5052:5052
     volumes:
-      - /mnt/Scorpion/abi-cluster/test/lighthouse:/home/lighthouse/.lighthouse
+      - /mnt/Scorpion/abi-cluster/test/lighthouse-data:/home/lighthouse/.lighthouse
     command: beacon_node --network prater --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545
+    restart: unless-stopped
+
+  validator:
+    image: docker.gbre.org/lighthouse
+    build: ./lighthouse
+    user: 1000:1000
+    ports:
+      - 5062:5062
+    volumes:
+      - /mnt/Raiden/abi-cluster/test/lighthouse-keystore:/home/lighthouse/.lighthouse
+    command: validator_client --http --network prater --beacon-nodes http://beacon:5052
     restart: unless-stopped
