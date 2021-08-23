@@ -11,6 +11,7 @@ services:
       - /mnt/Scorpion/abi-cluster/test/geth-data:/home/ethereum/.ethereum
       - /mnt/Raiden/abi-cluster/test/geth-keystore:/home/ethereum/.keystore
     command: --goerli --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
+    # command: --goerli --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock snapshot prune-state
     restart: unless-stopped
 
   beacon:
