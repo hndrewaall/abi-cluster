@@ -1,6 +1,6 @@
 FROM golang:1.16.7-alpine3.14 as builder
 
-ARG TAG="v1.10.6"
+ARG TAG="v1.10.8"
 
 RUN apk add --no-cache gcc musl-dev linux-headers git
 
