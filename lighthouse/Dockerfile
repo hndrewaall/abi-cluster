@@ -1,6 +1,6 @@
 FROM rust:1.54.0-buster AS builder
 
-ARG TAG="v1.5.1"
+ARG TAG="v1.5.2-rc.0"
 ARG PORTABLE
 ENV PORTABLE $PORTABLE
 
