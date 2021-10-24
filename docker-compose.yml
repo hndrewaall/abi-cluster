@@ -8,10 +8,10 @@ services:
       - 30303
       - 8544:8545
     volumes:
-      - /mnt/Scorpion/abi-cluster/test/geth-data:/home/ethereum/.ethereum
-      - /mnt/Raiden/abi-cluster/test/geth-keystore:/home/ethereum/.keystore
-    command: --goerli --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
-    # command: --goerli --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock snapshot prune-state
+      - /mnt/Scorpion/abi-cluster/main/geth-data:/home/ethereum/.ethereum
+      - /mnt/Raiden/abi-cluster/main/geth-keystore:/home/ethereum/.keystore
+    command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
+    # command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock snapshot prune-state
     restart: unless-stopped
 
   beacon:
@@ -23,17 +23,17 @@ services:
       - 9000:9000/udp
       - 5052:5052
     volumes:
-      - /mnt/Scorpion/abi-cluster/test/lighthouse-data:/home/lighthouse/.lighthouse
-    command: beacon_node --network prater --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545
+      - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
+    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545
     restart: unless-stopped
 
-  validator:
-    image: docker.gbre.org/lighthouse
-    build: ./lighthouse
-    user: 1000:1000
-    ports:
-      - 5062:5062
-    volumes:
-      - /mnt/Raiden/abi-cluster/test/lighthouse-keystore:/home/lighthouse/.lighthouse
-    command: validator_client --http --network prater --beacon-nodes http://beacon:5052
-    restart: unless-stopped
+#  validator:
+#    image: docker.gbre.org/lighthouse
+#    build: ./lighthouse
+#    user: 1000:1000
+#    ports:
+#      - 5062:5062
+#    volumes:
+#      - /mnt/Raiden/abi-cluster/test/lighthouse-keystore:/home/lighthouse/.lighthouse
+#    command: validator_client --http --beacon-nodes http://beacon:5052
+#    restart: unless-stopped
