@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import datetime
+import time
 from botocore.errorfactory import ClientError
 
 
@@ -39,6 +40,7 @@ class S3Lock():
         self.bucket = bucket
         self.verbose = verbose
         self.namespace = namespace
+        self.wait_time_s = wait_time_s
         if namespace is not None:
             self.FLAG_0_FILE = f"{namespace}{self.FLAG_0_FILE}"
             self.FLAG_1_FILE = f"{namespace}{self.FLAG_1_FILE}"
@@ -97,12 +99,16 @@ class S3Lock():
         # My turn! Woooooooooooooo
         if self.verbose:
             print(f"Acquired lock for process {self.process_num}!")
+
+    def release_lock(self):
+        self._signal_im_done()
     
-    @property
     def _signal_i_want_to_enter(self):
         self._write_s3_object(self._my_flag_file, self.FLAG_SET_VALUE)
 
-    @property
+    def _signal_im_done(self):
+        self._write_s3_object(self._my_flag_file, self.FLAG_UNSET_VALUE)
+
     def _give_them_their_turn(self):
         self._write_s3_object(self.TURN_FILE, self._their_turn_value)
 
