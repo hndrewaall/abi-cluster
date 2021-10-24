@@ -7,6 +7,23 @@ from s3_lock import S3Lock
 
 @click.group()
 def cli():
+    """
+    Locking utility for two processes that uses S3 as a backend.
+
+    Example usage:
+
+    \b
+    ------- Terminal 1:
+    ./controller.py init -b seaucre-abi-test
+    ./controller.py acquire-lock -b seaucre-abi-test -p 0 && echo "Acquired lock p0"
+    Acquired lock p0
+    ------- Terminal 2:
+    ./controller.py acquire-lock -b seaucre-abi-test -p 1 && echo "Acquired lock p1"
+    ------- Terminal 1:
+    ./controller.py release-lock -b seaucre-abi-test -p 0 # In first terminal.
+    ------- Terminal 2:
+    Acquired lock p1
+    """
     pass
 
 
@@ -35,7 +52,7 @@ def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: 
 @click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
 @click.option("--verbose", "-v", default=False, is_flag=True)
 def release_lock(bucket: str, process_num: str, namespace: str = None, verbose: bool = False) -> None:
-    """Acquire lock"""
+    """Release lock"""
 
     s3_client = boto3.client("s3")
     S3Lock(
