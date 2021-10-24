@@ -20,7 +20,7 @@ def cli():
     ------- Terminal 2:
     ./controller.py acquire-lock -b seaucre-abi-test -p 1 && echo "Acquired lock p1"
     ------- Terminal 1:
-    ./controller.py release-lock -b seaucre-abi-test -p 0 # In first terminal.
+    ./controller.py release-lock -b seaucre-abi-test -p 0
     ------- Terminal 2:
     Acquired lock p1
     """
