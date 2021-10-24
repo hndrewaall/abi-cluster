@@ -13,23 +13,28 @@ def cli():
     Example usage:
 
     \b
-    ------- Terminal 1:
-    ./controller.py init -b seaucre-abi-test  # This creates all the files and marks them as unset (no one has the lock).
-    ./controller.py acquire-lock -b seaucre-abi-test -p 0 -v
+    ------- Terminal 0:
+    # This creates all the files and marks them as unset (no one has the lock).
+    ./controller.py init -b seaucre-abi-test && echo "Init lock ended"
+    Init lock ended
+    ./controller.py acquire-lock -b seaucre-abi-test -p 0 -v && echo "P0 acquire ended"
     I am the mighty process 0!
     Setting flag_0 and setting turn to 1.
     Acquired lock for process 0!
-    ------- Terminal 2:
-    ./controller.py acquire-lock -b seaucre-abi-test -p 1 -v
+    P0 acquire ended
+    ------- Terminal 1:
+    ./controller.py acquire-lock -b seaucre-abi-test -p 1 -v && echo "P1 acquire ended"
     I am the mighty process 1!
     Setting flag_1 and setting turn to 0.
     Poor little old me, process 1, waiting for my turn for 0 seconds..
     Poor little old me, process 1, waiting for my turn for 5 seconds..
-    ------- Terminal 1:
-    ./controller.py release-lock -b seaucre-abi-test -p 0 -v
+    ------- Terminal 0:
+    ./controller.py release-lock -b seaucre-abi-test -p 0 -v && echo "Release ended"
     Released lock for process 0!
-    ------- Terminal 2:
+    Release ended
+    ------- Terminal 1:
     Acquired lock for process 1!
+    P1 acquire ended
     """
     pass
 
