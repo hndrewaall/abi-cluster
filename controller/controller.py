@@ -26,7 +26,7 @@ def cli():
     Poor little old me, process 1, waiting for my turn for 0 seconds..
     Poor little old me, process 1, waiting for my turn for 5 seconds..
     ------- Terminal 1:
-    ./controller.py release-lock -b seaucre-abi-test -p 0
+    ./controller.py release-lock -b seaucre-abi-test -p 0 -v
     Released lock for process 0!
     ------- Terminal 2:
     Acquired lock for process 1!
