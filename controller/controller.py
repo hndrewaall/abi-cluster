@@ -14,7 +14,7 @@ def cli():
 
     \b
     ------- Terminal 1:
-    ./controller.py init -b seaucre-abi-test
+    ./controller.py init -b seaucre-abi-test  # This creates all the files and marks them as unset (no one has the lock).
     ./controller.py acquire-lock -b seaucre-abi-test -p 0 -v
     I am the mighty process 0!
     Setting flag_0 and setting turn to 1.
@@ -36,11 +36,29 @@ def cli():
 
 @cli.command()
 @click.option("--bucket", "-b", required=True, type=str, help="Bucket")
-@click.option("--process-num", "-p", required=True, type=click.Choice(["0", "1"]), help="Process number")
-@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
+@click.option(
+    "--process-num",
+    "-p",
+    required=True,
+    type=click.Choice(["0", "1"]),
+    help="Process number",
+)
+@click.option(
+    "--namespace",
+    "-n",
+    required=False,
+    type=str,
+    help="String to prepend lock files with",
+)
 @click.option("--verbose", "-v", default=False, is_flag=True)
-def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: bool = False) -> None:
-    """Acquire lock"""
+def acquire_lock(
+    bucket: str, process_num: str, namespace: str = None, verbose: bool = False
+) -> None:
+    """
+    \b
+    Acquire lock.
+    This process will have the lock until release-lock is run.
+    """
 
     s3_client = boto3.client("s3")
     S3Lock(
@@ -55,11 +73,25 @@ def acquire_lock(bucket: str, process_num: str, namespace: str = None, verbose: 
 
 @cli.command()
 @click.option("--bucket", "-b", required=True, type=str, help="Bucket")
-@click.option("--process-num", "-p", required=True, type=click.Choice(["0", "1"]), help="Process number")
-@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
+@click.option(
+    "--process-num",
+    "-p",
+    required=True,
+    type=click.Choice(["0", "1"]),
+    help="Process number",
+)
+@click.option(
+    "--namespace",
+    "-n",
+    required=False,
+    type=str,
+    help="String to prepend lock files with",
+)
 @click.option("--verbose", "-v", default=False, is_flag=True)
-def release_lock(bucket: str, process_num: str, namespace: str = None, verbose: bool = False) -> None:
-    """Release lock"""
+def release_lock(
+    bucket: str, process_num: str, namespace: str = None, verbose: bool = False
+) -> None:
+    """Release lock."""
 
     s3_client = boto3.client("s3")
     S3Lock(
@@ -74,14 +106,35 @@ def release_lock(bucket: str, process_num: str, namespace: str = None, verbose: 
 
 @cli.command()
 @click.option("--bucket", "-b", required=True, type=str, help="Bucket")
-@click.option("--overwrite", "-v", default=False, is_flag=True, help="Initialize values, even if the lock files already exist")
-@click.option("--namespace", "-n", required=False, type=str, help="String to prepend lock files with")
+@click.option(
+    "--overwrite",
+    "-v",
+    default=False,
+    is_flag=True,
+    help="If set, will overwrite existing values. This has the effect of releasing the lock on p0 and p1.",
+)
+@click.option(
+    "--namespace",
+    "-n",
+    required=False,
+    type=str,
+    help="String to prepend lock files with",
+)
 @click.option("--verbose", "-v", default=False, is_flag=True)
-def init(bucket: str, overwrite: bool = False, namespace: str = None, verbose: bool = False) -> None:
-    """Initialize lock"""
+def init(
+    bucket: str, overwrite: bool = False, namespace: str = None, verbose: bool = False
+) -> None:
+    """
+    \b
+    Initialize lock.
+    That is, create the necessary files, and mark them as unset (no one has the lock).
+    Harmless to run twice if --overwrite isn't set.
+    """
 
     if overwrite:
-        are_you_sure = input("Are you sure you want to overwrite? This will erase any values that exist. (yes please) ")
+        are_you_sure = input(
+            "Are you sure you want to overwrite? This will erase any values that exist. (yes please) "
+        )
         if not are_you_sure == "yes please":
             print("Exiting without initializing.")
             return
@@ -96,5 +149,5 @@ def init(bucket: str, overwrite: bool = False, namespace: str = None, verbose: b
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
