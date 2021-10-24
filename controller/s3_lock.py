@@ -80,7 +80,7 @@ class S3Lock():
         
         if self.verbose:
             print(f"I am the mighty process {self.process_num}!")
-            print(f"Setting {self._my_flag_file} flag and setting turn to {self._their_turn_value}.")
+            print(f"Setting {self._my_flag_file} and setting turn to {self._their_turn_value}.")
 
         self._signal_i_want_to_enter()
         self._give_them_their_turn()
@@ -102,6 +102,9 @@ class S3Lock():
 
     def release_lock(self):
         self._signal_im_done()
+        if self.verbose:
+            print(f"Released lock for process {self.process_num}!")
+
     
     def _signal_i_want_to_enter(self):
         self._write_s3_object(self._my_flag_file, self.FLAG_SET_VALUE)

@@ -15,14 +15,21 @@ def cli():
     \b
     ------- Terminal 1:
     ./controller.py init -b seaucre-abi-test
-    ./controller.py acquire-lock -b seaucre-abi-test -p 0 && echo "Acquired lock p0"
-    Acquired lock p0
+    ./controller.py acquire-lock -b seaucre-abi-test -p 0 -v
+    I am the mighty process 0!
+    Setting flag_0 and setting turn to 1.
+    Acquired lock for process 0!
     ------- Terminal 2:
-    ./controller.py acquire-lock -b seaucre-abi-test -p 1 && echo "Acquired lock p1"
+    ./controller.py acquire-lock -b seaucre-abi-test -p 1 -v
+    I am the mighty process 1!
+    Setting flag_1 and setting turn to 0.
+    Poor little old me, process 1, waiting for my turn for 0 seconds..
+    Poor little old me, process 1, waiting for my turn for 5 seconds..
     ------- Terminal 1:
     ./controller.py release-lock -b seaucre-abi-test -p 0
+    Released lock for process 0!
     ------- Terminal 2:
-    Acquired lock p1
+    Acquired lock for process 1!
     """
     pass
 
