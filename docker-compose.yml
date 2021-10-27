@@ -35,5 +35,5 @@ services:
       - 5062:5062
     volumes:
       - /mnt/Raiden/abi-cluster/main/lighthouse-keystore:/home/lighthouse/.lighthouse
-    command: validator_client --http --beacon-nodes http://beacon:5052
+    command: validator_client --http --beacon-nodes http://beacon:5052 --graffiti-file /home/lighthouse/.lighthouse/mainnet/graffiti_file.txt
     restart: unless-stopped
