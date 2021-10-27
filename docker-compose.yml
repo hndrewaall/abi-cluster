@@ -27,13 +27,13 @@ services:
     command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545
     restart: unless-stopped
 
-#  validator:
-#    image: docker.gbre.org/lighthouse
-#    build: ./lighthouse
-#    user: 1000:1000
-#    ports:
-#      - 5062:5062
-#    volumes:
-#      - /mnt/Raiden/abi-cluster/test/lighthouse-keystore:/home/lighthouse/.lighthouse
-#    command: validator_client --http --beacon-nodes http://beacon:5052
-#    restart: unless-stopped
+  validator:
+    image: docker.gbre.org/lighthouse
+    build: ./lighthouse
+    user: 1000:1000
+    ports:
+      - 5062:5062
+    volumes:
+      - /mnt/Raiden/abi-cluster/main/lighthouse-keystore:/home/lighthouse/.lighthouse
+    command: validator_client --http --beacon-nodes http://beacon:5052 --graffiti-file /home/lighthouse/.lighthouse/mainnet/graffiti_file.txt
+    restart: unless-stopped
