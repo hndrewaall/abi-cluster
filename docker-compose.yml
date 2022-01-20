@@ -26,7 +26,7 @@ services:
       - 5052:5052
     volumes:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
-    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --eth1-endpoints http://geth:8545 --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
+    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --eth1-endpoints http://geth:8545 --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
     restart: unless-stopped
 
   validator:
