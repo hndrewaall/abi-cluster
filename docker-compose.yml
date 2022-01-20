@@ -1,7 +1,8 @@
-version: "3.5"
+version: "3.9"
 services:
   geth:
     image: docker.gbre.org/geth
+    init: true
     build: ./geth
     user: 1000:1000
     ports:
@@ -16,6 +17,7 @@ services:
 
   beacon:
     image: docker.gbre.org/lighthouse
+    init: true
     build: ./lighthouse
     user: 1000:1000
     ports:
@@ -29,6 +31,7 @@ services:
 
   validator:
     image: docker.gbre.org/lighthouse
+    init: true
     build: ./lighthouse
     user: 1000:1000
     ports:
