@@ -13,7 +13,7 @@ RUN git fetch && git checkout $TAG
 RUN make
 
 
-FROM debian:bullseye-20211220-slim
+FROM debian:bullseye-20211220-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	libssl-dev \
@@ -21,9 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/local/cargo/bin/lighthouse /usr/local/bin/lighthouse
-
 RUN addgroup --system --gid 1000 lighthouse && adduser --system -uid 1000 lighthouse --gid 1000
 USER lighthouse
+
+COPY --from=builder /usr/local/cargo/bin/lighthouse /usr/local/bin/lighthouse
 
 ENTRYPOINT ["lighthouse"]
