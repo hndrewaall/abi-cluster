@@ -14,6 +14,7 @@ services:
     command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
     # command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock snapshot prune-state
     restart: unless-stopped
+    stop_grace_period: 5m
 
   beacon:
     image: docker.gbre.org/lighthouse
@@ -28,6 +29,7 @@ services:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
     command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --eth1-endpoints http://geth:8545 --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
     restart: unless-stopped
+    stop_grace_period: 5m
 
   validator:
     image: docker.gbre.org/lighthouse
@@ -40,3 +42,4 @@ services:
       - /mnt/Raiden/abi-cluster/main/lighthouse-keystore:/home/lighthouse/.lighthouse
     command: validator_client --http --beacon-nodes http://beacon:5052 --graffiti-file /home/lighthouse/.lighthouse/mainnet/graffiti_file.txt --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
     restart: unless-stopped
+    stop_grace_period: 5m
