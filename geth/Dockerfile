@@ -1,13 +1,13 @@
 FROM golang:1.16.7-alpine3.14 as builder
 
-ARG TAG="v1.10.15"
-
 RUN apk add --no-cache gcc musl-dev linux-headers git
 
 RUN git clone https://github.com/ethereum/go-ethereum.git
 
 WORKDIR /go/go-ethereum
-RUN git checkout $TAG
+
+ARG TAG="v1.10.18"
+RUN git fetch && git checkout $TAG
 RUN go run build/ci.go install ./cmd/geth
 
 
