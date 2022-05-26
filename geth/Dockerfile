@@ -11,13 +11,13 @@ RUN git fetch && git checkout $TAG
 RUN go run build/ci.go install ./cmd/geth
 
 
-FROM alpine:3.14.1
+FROM alpine:3.14.1 as runner
 
 RUN apk add --no-cache ca-certificates
 
 RUN addgroup ethereum -g 1000 && adduser -D -u 1000 ethereum -G ethereum
 
-COPY --from=builder /go/go-ethereum/build/bin/geth /usr/local/bin/
-
 USER ethereum
 ENTRYPOINT ["geth"]
+
+COPY --from=builder /go/go-ethereum/build/bin/geth /usr/local/bin/
