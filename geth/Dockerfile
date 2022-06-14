@@ -6,8 +6,8 @@ RUN git clone https://github.com/ethereum/go-ethereum.git
 
 WORKDIR /go/go-ethereum
 
-ARG TAG="v1.10.18"
-RUN git fetch && git checkout $TAG
+ARG TAG="master"
+RUN git fetch && git checkout $TAG && git pull
 RUN go run build/ci.go install ./cmd/geth
 
 
