@@ -1,4 +1,4 @@
-FROM rust:1.58.0-bullseye AS builder
+FROM rust:1.62.1-bullseye AS builder
 
 ARG PORTABLE
 ENV PORTABLE $PORTABLE
@@ -8,7 +8,7 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y cmake libclang-dev
 
-ARG TAG="v2.3.1"
+ARG TAG="v2.5.1"
 RUN git fetch && git checkout $TAG
 RUN make
 
