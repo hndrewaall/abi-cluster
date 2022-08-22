@@ -8,7 +8,7 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y cmake libclang-dev
 
-ARG TAG="v2.5.1"
+ARG TAG="v3.0.0"
 RUN git fetch && git checkout $TAG
 RUN make
 
