@@ -8,10 +8,11 @@ services:
     ports:
       - 30303
       - 8544:8545
+      - 8551
     volumes:
       - /mnt/Scorpion/abi-cluster/main/geth-data:/home/ethereum/.ethereum
       - /mnt/Scorpion/abi-cluster/main/geth-keystore:/home/ethereum/.keystore
-    command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock
+    command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock --authrpc.addr 0.0.0.0 --authrpc.vhosts localhost,geth
     # command: --http --http.addr 0.0.0.0 --http.vhosts localhost,geth --keystore ~/.keystore --allow-insecure-unlock snapshot prune-state
     restart: unless-stopped
     stop_grace_period: 5m
@@ -27,7 +28,8 @@ services:
       - 5052:5052
     volumes:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
-    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --eth1-endpoints http://geth:8545 --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
+      - /mnt/Scorpion/abi-cluster/main/geth-data:/home/lighthouse/.ethereum
+    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --suggested-fee-recipient $SUGGESTED_FEE_RECIPIENT --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
     restart: unless-stopped
     stop_grace_period: 5m
 
