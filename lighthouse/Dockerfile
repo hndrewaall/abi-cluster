@@ -8,12 +8,12 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y cmake libclang-dev protobuf-compiler
 
-ARG TAG="v3.4.0"
+ARG TAG="v4.0.1"
 RUN git fetch && git checkout $TAG
 RUN make
 
 
-FROM debian:bullseye-20230109-slim AS runner
+FROM debian:bullseye-20230411-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	libssl-dev \
