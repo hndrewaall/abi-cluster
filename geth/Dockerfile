@@ -6,12 +6,12 @@ RUN git clone https://github.com/ethereum/go-ethereum.git
 
 WORKDIR /go/go-ethereum
 
-ARG TAG="v1.11.1"
+ARG TAG="v1.11.5"
 RUN git fetch && git checkout $TAG
 RUN go run build/ci.go install ./cmd/geth
 
 
-FROM alpine:3.17.2 as runner
+FROM alpine:3.17.3 as runner
 
 RUN apk add --no-cache ca-certificates
 
