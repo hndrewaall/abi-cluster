@@ -8,7 +8,7 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y cmake libclang-dev protobuf-compiler
 
-ARG TAG="v4.0.1"
+ARG TAG="v4.0.2-rc.0"
 RUN git fetch && git checkout $TAG
 RUN make
 
