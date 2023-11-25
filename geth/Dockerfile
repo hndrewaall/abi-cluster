@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.17 as builder
+FROM golang:1.21-alpine as builder
 
 RUN apk add --no-cache gcc musl-dev linux-headers git
 
@@ -6,12 +6,12 @@ RUN git clone https://github.com/ethereum/go-ethereum.git
 
 WORKDIR /go/go-ethereum
 
-ARG TAG="v1.12.0"
+ARG TAG="v1.13.5"
 RUN git fetch && git checkout $TAG
 RUN go run build/ci.go install ./cmd/geth
 
 
-FROM alpine:3.17.3 as runner
+FROM alpine:latest as runner
 
 RUN apk add --no-cache ca-certificates
 
