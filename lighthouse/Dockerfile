@@ -1,4 +1,4 @@
-FROM rust:1.68.2-bullseye AS builder
+FROM rust:1.69.0-bullseye AS builder
 
 ARG PORTABLE
 ENV PORTABLE $PORTABLE
@@ -8,7 +8,7 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y cmake libclang-dev protobuf-compiler
 
-ARG TAG="v4.2.0"
+ARG TAG="v4.5.0"
 RUN git fetch && git checkout $TAG
 RUN make
 
