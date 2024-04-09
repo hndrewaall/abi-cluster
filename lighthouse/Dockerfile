@@ -1,19 +1,22 @@
-FROM rust:1.69.0-bullseye AS builder
+FROM rust:1.75.0-bullseye AS builder
 
 ARG PORTABLE
+ARG PROFILE=release
+
 ENV PORTABLE $PORTABLE
+ENV PROFILE $PROFILE
 
 RUN git clone https://github.com/sigp/lighthouse src
 WORKDIR /src
 
-RUN apt-get update && apt-get install -y cmake libclang-dev protobuf-compiler
+RUN apt-get update && apt-get install -y cmake libclang-dev
 
-ARG TAG="v4.5.0"
+ARG TAG="v5.1.3"
 RUN git fetch && git checkout $TAG
 RUN make
 
 
-FROM debian:bullseye-20230411-slim AS runner
+FROM debian:bullseye-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	libssl-dev \
