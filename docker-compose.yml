@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   geth:
     image: docker.gbre.org/geth
@@ -31,8 +30,8 @@ services:
     volumes:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
       - /mnt/Scorpion/abi-cluster/main/geth-data:/home/lighthouse/.ethereum
-    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --suggested-fee-recipient $SUGGESTED_FEE_RECIPIENT --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
-    # command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --suggested-fee-recipient $SUGGESTED_FEE_RECIPIENT --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY --checkpoint-sync-url https://mainnet.checkpoint.sigp.io --purge-db
+    command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret 
+    # command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --checkpoint-sync-url https://mainnet.checkpoint.sigp.io --purge-db
     restart: unless-stopped
     stop_grace_period: 5m
 
@@ -45,6 +44,6 @@ services:
       - 5062:5062
     volumes:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-keystore:/home/lighthouse/.lighthouse
-    command: validator_client --http --beacon-nodes http://beacon:5052 --graffiti-file /home/lighthouse/.lighthouse/mainnet/graffiti_file.txt --monitoring-endpoint https://beaconcha.in/api/v1/client/metrics?apikey=$BEACONCHAIN_API_KEY
+    command: validator_client --http --beacon-nodes http://beacon:5052 --graffiti-file /home/lighthouse/.lighthouse/mainnet/graffiti_file.txt
     restart: unless-stopped
     stop_grace_period: 5m
