@@ -31,7 +31,7 @@ services:
       - /mnt/Scorpion/abi-cluster/main/lighthouse-data:/home/lighthouse/.lighthouse
       - /mnt/Scorpion/abi-cluster/main/geth-data:/home/lighthouse/.ethereum
     command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret 
-    # command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --checkpoint-sync-url https://mainnet.checkpoint.sigp.io --purge-db
+    # command: beacon_node --staking --http-address 0.0.0.0 --subscribe-all-subnets --import-all-attestations --validator-monitor-auto --execution-endpoint http://geth:8551 --execution-jwt /home/lighthouse/.ethereum/geth/jwtsecret --checkpoint-sync-url https://mainnet.checkpoint.sigp.io --purge-db-force
     restart: unless-stopped
     stop_grace_period: 5m
 
