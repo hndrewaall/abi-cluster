@@ -1,6 +1,6 @@
 services:
   geth:
-    image: docker.gbre.org/geth:v1.0.0
+    image: docker.gbre.org/geth:v1.0.1
     init: true
     build: ./geth
     user: 1000:1000
@@ -20,7 +20,7 @@ services:
     stop_grace_period: 5m
 
   beacon:
-    image: docker.gbre.org/lighthouse:v1.0.0
+    image: docker.gbre.org/lighthouse:v1.0.1
     init: true
     build: ./lighthouse
     user: 1000:1000
@@ -38,7 +38,7 @@ services:
     stop_grace_period: 5m
 
   validator:
-    image: docker.gbre.org/lighthouse:v1.0.0
+    image: docker.gbre.org/lighthouse:v1.0.1
     init: true
     build: ./lighthouse
     user: 1000:1000
