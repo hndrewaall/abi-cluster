@@ -1,0 +1,208 @@
+# abi-cluster :: RELEASE — build the node's images and publish them.
+#
+# WHY THIS FILE EXISTS. The container registry this node pulls from accepts
+# writes from exactly one principal: the CI runner. No developer workstation
+# holds a push credential, deliberately — "publish any tag to the registry the
+# mainnet validator pulls from" is not an authority that should sit on a
+# general-purpose machine. So CI is the only way an image is built, and
+# `make geth-image` / `make lighthouse-image` are local-only builds now.
+#
+# WHERE IT RUNS. This lives under `.gitea/workflows/` and NOT `.github/workflows/`
+# on purpose: the GitHub remote is a public documentation mirror for the people
+# staking alongside this node, and nothing there should build or publish anything.
+# GitHub Actions never sees this file.
+#
+# `runs-on: host` executes inside the self-hosted runner container, which has NO
+# Docker socket. The builder is rootless buildah — daemonless and socketless, so
+# having a builder at all does not hand a workflow file the host's daemon.
+#
+# STORAGE DRIVER IS vfs, AND THAT IS NOT A PREFERENCE. The runner's own root
+# filesystem is overlayfs and it has neither /dev/fuse nor fuse-overlayfs, so
+# native overlay refuses outright ("'overlay' is not supported over overlayfs, a
+# mount_program is required"). vfs copies the whole rootfs per layer, which for
+# these two images — a full Go build and a full Rust build — is the dominant
+# cost of the job. Measured, not assumed. Do not "optimise" this back to overlay
+# without first giving the runner a fuse device.
+#
+# NO BUILD CACHE, ON PURPOSE. The Makefile used to carry BuildKit's
+# `--cache-to=type=inline --cache-from=...`. Buildah has no equivalent that works
+# here: inline cache is a BuildKit feature, and buildah's registry cache would
+# need its own cache repo plus a warm vfs store that this job does not keep
+# between runs. A release therefore compiles from scratch — geth in a few
+# minutes, lighthouse in roughly half an hour. That is affordable because this
+# workflow fires on release tags only, never on a push.
+#
+# FAIL CLOSED, IN ORDER: not a bare semver tag -> stop. Tag not an ancestor of
+# main -> stop. Tag already published for EITHER image -> stop. A build or push
+# failure -> stop, before the other image is published if it can be helped.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  # THE PARAMETER. Publishing somewhere else is a repo Actions variable named
+  # REGISTRY plus the matching REGISTRY_USER / REGISTRY_PASS secrets — no edit
+  # to this file. The literal below is only the default when that var is unset.
+  REGISTRY: ${{ vars.REGISTRY || 'docker.gbre.org' }}
+  # See the header. --isolation chroot avoids a user namespace per RUN step;
+  # vfs is forced by the runner's filesystem, not chosen.
+  BUILDAH_ISOLATION: chroot
+  STORAGE_DRIVER: vfs
+
+jobs:
+  publish:
+    runs-on: host
+    # A cold lighthouse compile under vfs is the long pole. Generous, but bounded
+    # so a wedged build cannot hold the runner indefinitely.
+    timeout-minutes: 240
+    steps:
+      # Full history + tags: the "is this tag on main" gate below needs real
+      # ancestry, and a shallow clone would make merge-base lie.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The `on:` filter above is a glob, not a regex, and globs are looser than
+      # they look. Re-assert the exact shape here so the gate is a regex this
+      # workflow owns rather than a pattern the forge interprets.
+      - name: Gate — the ref must be a bare semver tag
+        run: |
+          set -eu
+          ref='${{ gitea.ref }}'
+          tag='${{ gitea.ref_name }}'
+          case "$ref" in
+            refs/tags/*) ;;
+            *) echo "REFUSING: $ref is not a tag ref" >&2; exit 1 ;;
+          esac
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "REFUSING: '$tag' is not vMAJOR.MINOR.PATCH" >&2
+            exit 1
+          fi
+          # An empty REGISTRY would build image references like ":v1.0.0" and
+          # push them somewhere surprising. Assert it rather than discover it.
+          test -n "$REGISTRY" || { echo "REFUSING: REGISTRY is empty" >&2; exit 1; }
+          echo "tag=$tag registry=$REGISTRY"
+
+      # A tag on a side branch would publish code that never landed on main and
+      # is therefore not what anyone reviewed. `--is-ancestor` is the check that
+      # actually means that; `git branch --contains` would also match a branch
+      # merged nowhere.
+      - name: Gate — the tag must be on main
+        run: |
+          set -eu
+          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "REFUSING: ${{ gitea.ref_name }} is not an ancestor of main" >&2
+            exit 1
+          fi
+          echo "$(git rev-parse HEAD) is on main"
+
+      # A tag must be immutable. This registry has deletion disabled so a tag
+      # cannot be removed, but a re-push WOULD move the pointer — and a node that
+      # resolved v1.0.0 yesterday would then run different code from one that
+      # resolves it today, under the same version. A mistake gets a new patch
+      # number, never a re-cut.
+      #
+      # 404 from tags/list means the repo does not exist yet (first release);
+      # that is a pass, and is distinguished from a real failure rather than
+      # swallowed with `|| true`.
+      - name: Gate — refuse to rebuild an existing tag
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
+        run: |
+          set -eu
+          tag='${{ gitea.ref_name }}'
+          for repo in geth lighthouse; do
+            url="https://$REGISTRY/v2/$repo/tags/list"
+            code=$(curl -s -o /tmp/tags.json -w '%{http_code}' -u "$REGISTRY_USER:$REGISTRY_PASS" "$url")
+            case "$code" in
+              404) echo "$repo: no such repo yet — first publish"; continue ;;
+              200) ;;
+              *)   echo "FAIL: $url returned HTTP $code" >&2; exit 1 ;;
+            esac
+            # `tags` is null, not [], for a repo whose tags were all deleted —
+            # `or []` is load-bearing, not defensive noise.
+            if python3 -c "import json,sys; t=json.load(open('/tmp/tags.json')).get('tags') or []; sys.exit(0 if '$tag' in t else 1)"; then
+              echo "REFUSING: $repo:$tag already published. Cut a new patch version." >&2
+              exit 1
+            fi
+            echo "$repo: $tag is free"
+          done
+
+      # One image per client. `beacon` and `validator` both run the lighthouse
+      # image; only two images are built.
+      #
+      # --platform linux/amd64 is the host's own architecture — this node runs
+      # on the same amd64 machine as the runner, so nothing is emulated and no
+      # binfmt registration is involved.
+      #
+      # `--format docker` rather than buildah's OCI default: these are pulled by
+      # docker compose against a registry:2, and a v2s2 manifest is the
+      # reference-compatible shape there. Nothing here needs OCI features.
+      #
+      # --digestfile records the digest the REGISTRY accepted, rather than one
+      # computed locally and hoped to match; it is what the summary reports.
+      - name: Build and push geth and lighthouse
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
+        run: |
+          set -eu
+          tag='${{ gitea.ref_name }}'
+          mkdir -p /tmp/digests
+          for img in geth lighthouse; do
+            ref="$REGISTRY/$img:$tag"
+            echo "::group::build $img"
+            buildah bud \
+              --platform linux/amd64 \
+              --format docker \
+              -t "$ref" "$img"
+            buildah push \
+              --creds "$REGISTRY_USER:$REGISTRY_PASS" \
+              --digestfile "/tmp/digests/$img" \
+              "$ref"
+            echo "::endgroup::"
+            echo "$img -> $(cat /tmp/digests/$img)"
+          done
+
+      # PUBLISHED, not deployed. Nothing in this repo rolls the node; a human
+      # (or /update-eth) pins the new tag in docker-compose.yml and restarts.
+      # Do not let this notification imply the validator is running the new code.
+      #
+      # Credentials are Actions secrets, not a file mounted from the host —
+      # mounting a host credential into the runner would put it in reach of
+      # every workflow file in every repo.
+      - name: Pushover — published
+        if: success()
+        env:
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+        run: |
+          set -eu
+          tag='${{ gitea.ref_name }}'
+          body="abi-cluster $tag published to $REGISTRY"$'\n'"images: geth, lighthouse"$'\n'"NOT deployed — pin the tag in docker-compose.yml and roll the node."
+          code=$(curl -s -o /tmp/pushover.out -w '%{http_code}' \
+            --form-string "token=$PUSHOVER_TOKEN" \
+            --form-string "user=$PUSHOVER_USER" \
+            --form-string "title=abi-cluster $tag published" \
+            --form-string "message=$body" \
+            https://api.pushover.net/1/messages.json)
+          echo "pushover HTTP $code"
+          # The images are already published by this point, so a red job here
+          # means "you were not told", not "the release is broken".
+          test "$code" = "200"
+
+      # vfs keeps a full copy of the rootfs per layer, and two compiler images
+      # per release is tens of gigabytes. Without this the runner's disk fills
+      # silently over a handful of releases. `always()` so a failed build cleans
+      # up after itself too.
+      - name: Reclaim builder storage
+        if: always()
+        run: |
+          buildah rm --all || true
+          buildah rmi --all --force || true
+          df -h / | tail -1
