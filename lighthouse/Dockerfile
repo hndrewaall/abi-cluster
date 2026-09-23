@@ -1,4 +1,4 @@
-FROM rust:1.88.0-bullseye AS builder
+FROM rust:1.88.0-bookworm AS builder
 
 ARG PORTABLE
 ARG PROFILE=release
@@ -16,7 +16,7 @@ RUN git fetch && git checkout $TAG
 RUN make
 
 
-FROM debian:bullseye-slim AS runner
+FROM debian:bookworm-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	libssl-dev \
