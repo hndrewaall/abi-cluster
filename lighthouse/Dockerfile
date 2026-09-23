@@ -24,7 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system --gid 1000 lighthouse && adduser --system -uid 1000 lighthouse --gid 1000
+RUN addgroup --system --gid 1000 lighthouse \
+	&& adduser --system --uid 1000 --gid 1000 --home /home/lighthouse lighthouse
 USER lighthouse
 
 COPY --from=builder /usr/local/cargo/bin/lighthouse /usr/local/bin/lighthouse
