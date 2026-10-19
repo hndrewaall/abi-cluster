@@ -1,4 +1,4 @@
-FROM rust:1.88.0-bookworm AS builder
+FROM rust:1.91.0-bookworm AS builder
 
 ARG PORTABLE
 ARG PROFILE=release
@@ -9,9 +9,9 @@ ENV PROFILE $PROFILE
 RUN git clone https://github.com/sigp/lighthouse src
 WORKDIR /src
 
-RUN apt-get update && apt-get install -y cmake libclang-dev
+RUN apt-get update && apt-get install -y cmake clang libclang-dev
 
-ARG TAG="v8.2.3"
+ARG TAG="v8.3.0"
 RUN git fetch && git checkout $TAG
 RUN make
 
